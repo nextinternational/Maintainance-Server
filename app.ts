@@ -1,71 +1,77 @@
-import express,{NextFunction, Request, Response} from "express";
-export const app = express();
+// app.ts
+import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { rateLimit } from 'express-rate-limit'
+import { rateLimit } from "express-rate-limit";
 import { ErrorMiddleware } from "./middleware/error.js";
-
 import dotenv from "dotenv";
 import userRouter from "./routes/user.route.js";
+import equipmentRouter from "./routes/equipment.route.js";
+import maintenanceRouter from "./routes/maintenance.route.js";
+import supportTicketRouter from "./routes/support_ticket.route.js";
+
 dotenv.config();
 
+export const app = express();
 
-
-
-//body parser
+// Body parser
 app.use(express.json());
-
-//cookie parser
+app.use(express.urlencoded({ extended: true })); 
+// Cookie parser
 app.use(cookieParser());
 
-//cors => cross origin resource sharing 
-app.use(cors({
-    origin:['http://localhost:3000'],
-    credentials: true, 
-}));
+// CORS
+app.use(
+  cors({
+    origin:[
+       "http://localhost:8000",
+      "https://maintenance-dashboard-lime.vercel.app"
+      ],
+    credentials: true,
+  })
+);
 
-
-
-
-//api requests limit
+// Rate limiter — BEFORE routes
 const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+});
+app.use(limiter);
 
-
-
-
-
-
-	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-	standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
-	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-	// store: ... , // Redis, Memcached, etc. See below.
-})
-
-//routes
+// Routes
 app.use("/api/v1", userRouter);
+app.use("/api/v1", equipmentRouter);
+app.use("/api/v1", maintenanceRouter);
+app.use("/api/v1", supportTicketRouter);
 
-
-
-
-
-//testing api
-app.get("/test",( req:Request , res:Response , next : NextFunction) =>{
-res.status(200).json({
-    success:true,
-    message:"API is working!",
-  });
+// Test route
+app.get("/test", (req: Request, res: Response, next: NextFunction) => {
+    res.status(200).json({
+        success: true,
+        message: "API is working!",
+    });
 });
 
-
-//unknoun route
-app.use((req:Request , res:Response , next:NextFunction) =>{
+// Unknown route
+app.use((req: Request, res: Response, next: NextFunction) => {
     const err = new Error(`Route ${req.originalUrl} not found`) as any;
-    err.statusCode =404;
+    err.statusCode = 404;
     next(err);
 });
 
-//middleware calls
-app.use(limiter);
-
+// Error middleware — always last
 app.use(ErrorMiddleware);
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error("━━━ 🔴 Express Error ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.error("Route   :", req.method, req.originalUrl);
+  console.error("Message :", err.message);
+  console.error("Stack   :", err.stack);   // ← shows exact file + line
+  
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
