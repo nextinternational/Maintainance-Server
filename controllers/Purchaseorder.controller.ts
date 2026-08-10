@@ -4,7 +4,7 @@ import { VALID_PO_STATUSES } from "../models/Purchaseorder.model.js";
 import { fetchAllPurchaseOrders, fetchPurchaseOrderById, createPurchaseOrderService, createPurchaseOrderFromPartService, updatePurchaseOrderService, deletePurchaseOrderService, approvePurchaseOrderService, declinePurchaseOrderService, markAsOrderedService, cancelPurchaseOrderService, fulfillPurchaseOrderItemsService } from "../services/Purchaseorder.service.js";
 
 
-const ADMIN_ROLE = "manager"; // MaintainX's "Administrator"
+const ADMIN_ROLE = "Enduser"; // MaintainX's "Administrator"
 
 // ─── Cost visibility ─────────────────────────────────────────────────────────
 // "By default, Full Users can view and request purchase orders, but they

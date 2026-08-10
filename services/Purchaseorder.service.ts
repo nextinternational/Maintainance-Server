@@ -48,7 +48,7 @@ export interface PurchaseOrderFilters {
   requestedOnly?: boolean;
 }
 
-const ADMIN_ROLE = "manager"; // maps to MaintainX's "Administrator"
+const ADMIN_ROLE = "Enduser"; 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -115,6 +115,7 @@ async function applyMovingAverageCost(partId: number, qtyReceived: number, unitC
 }
 
 function assertAdmin(role: string) {
+  console.log("assertAdmin received role:", JSON.stringify(role));
   if (role !== ADMIN_ROLE) {
     throw new Error("Only an Administrator can perform this action");
   }
