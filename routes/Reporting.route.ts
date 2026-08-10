@@ -13,6 +13,8 @@ import {
   getLocationBreakdownController,
   getCategoryBreakdownController,
   getCostRollupController,
+  getRecentActivityController,
+  getRequestsDetailController,
 } from "../controllers/Reporting.controller.js";
 
 
@@ -91,4 +93,6 @@ reportingRouter.get(
   getCostRollupController,
 );
 
+reportingRouter.get("/reporting/details", isAuthenticated, authorizeRoles("manager","Enduser"),getRequestsDetailController);
+reportingRouter.get("/reporting/activity", isAuthenticated, authorizeRoles("manager","Enduser"),getRecentActivityController);
 export default reportingRouter;

@@ -14,6 +14,8 @@ import {
   getLocationBreakdown,
   getCategoryBreakdown,
   getCostRollup,
+  getRequestsDetail,
+  getRecentActivity,
 } from "../services/Reporting.service.js";
 
 
@@ -245,6 +247,41 @@ export const getCostRollupController = async (
 ) => {
   try {
     const data = await getCostRollup();
+
+    res.status(200).json({ success: true, data });
+  } catch (error: any) {
+    return next(new ErrorHandler(error.message || "Something went wrong", 400));
+  }
+};
+
+export const getRequestsDetailController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const filters = parseFilters(req);
+    const data = await getRequestsDetail(filters);
+
+    res.status(200).json({ success: true, total: data.length, data });
+  } catch (error: any) {
+    return next(new ErrorHandler(error.message || "Something went wrong", 400));
+  }
+};
+
+// ─── GET /reporting/activity ──────────────────────────────────────────────────
+// ?limit=30 (optional)
+
+export const getRecentActivityController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { limit } = req.query as { limit?: string };
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+
+    const data = await getRecentActivity(parsedLimit && !isNaN(parsedLimit) ? parsedLimit : undefined);
 
     res.status(200).json({ success: true, data });
   } catch (error: any) {

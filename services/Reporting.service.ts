@@ -586,3 +586,112 @@ export async function getReportingSummary(
     costRollup,
   };
 }
+// ─── Reporting Details (raw request table) ───────────────────────────────────
+
+export interface RequestDetailRow {
+  id: number;
+  name: string;
+  status: MaintenanceStatus;
+  priority: string;
+  equipmentName: string;
+  restaurant: string | null;
+  category: string | null;
+  reportedBy: string;
+  technicianNames: string[];
+  createdAt: string;
+  scheduleDate: string | null;
+  closeDate: string | null;
+}
+
+export async function getRequestsDetail(
+  filters: ReportingFilters = {},
+): Promise<RequestDetailRow[]> {
+  const match = buildDateMatch(filters);
+
+  const rows = await MaintenanceRequestModel.aggregate([
+    { $match: match },
+    { $sort: { createdAt: -1 } },
+    {
+      $lookup: {
+        from: "equipments",
+        localField: "equipmentId",
+        foreignField: "id",
+        as: "equipment",
+      },
+    },
+    { $unwind: { path: "$equipment", preserveNullAndEmptyArrays: true } },
+  ]);
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    status: r.status,
+    priority: r.priority,
+    equipmentName: r.equipment?.name ?? "Unknown equipment",
+    restaurant: r.equipment?.restaurant ?? null,
+    category: r.equipment?.category ?? null,
+    reportedBy: r.reportedBy,
+    technicianNames: (r.technicians ?? []).map((t: any) => t.name),
+    createdAt: new Date(r.createdAt).toISOString(),
+    scheduleDate: r.scheduleDate ? new Date(r.scheduleDate).toISOString() : null,
+    closeDate: r.closeDate ? new Date(r.closeDate).toISOString() : null,
+  }));
+}
+
+// ─── Recent Activity ──────────────────────────────────────────────────────────
+// Not a true event log (none exists yet) — derived from each request's current
+// status + updatedAt, sorted newest-first. Good enough for an activity feed
+// until a dedicated audit-log collection exists.
+
+export interface ActivityRow {
+  id: number;
+  name: string;
+  status: MaintenanceStatus;
+  priority: string;
+  equipmentName: string;
+  actionLabel: string;
+  actionAt: string;
+}
+
+function describeActivity(status: MaintenanceStatus): string {
+  switch (status) {
+    case "new":
+      return "Request created";
+    case "under_repair":
+      return "Technician assigned";
+    case "pending_review":
+      return "Marked complete — awaiting review";
+    case "done":
+      return "Reviewed and closed";
+    case "cancel":
+      return "Cancelled";
+    default:
+      return "Updated";
+  }
+}
+
+export async function getRecentActivity(limit = 30): Promise<ActivityRow[]> {
+  const rows = await MaintenanceRequestModel.aggregate([
+    { $sort: { updatedAt: -1 } },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: "equipments",
+        localField: "equipmentId",
+        foreignField: "id",
+        as: "equipment",
+      },
+    },
+    { $unwind: { path: "$equipment", preserveNullAndEmptyArrays: true } },
+  ]);
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    status: r.status,
+    priority: r.priority,
+    equipmentName: r.equipment?.name ?? "Unknown equipment",
+    actionLabel: describeActivity(r.status),
+    actionAt: new Date(r.updatedAt).toISOString(),
+  }));
+}
