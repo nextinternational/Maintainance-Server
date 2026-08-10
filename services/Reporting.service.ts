@@ -141,10 +141,11 @@ export async function getReactiveVsRepeatable(
 // Maps our 4 real statuses onto the labels used in the reference design.
 
 export interface StatusBreakdownReport {
-  open: number; // status: new
-  inProgress: number; // status: under_repair
-  onHold: number; // status: cancel (closest analogue we track today)
-  done: number; // status: done
+  new: number;
+  underRepair: number;
+  pendingReview: number;
+  done: number;
+  cancel: number;
   total: number;
 }
 
@@ -159,22 +160,17 @@ export async function getStatusBreakdown(
   ]);
 
   const counts: Record<MaintenanceStatus, number> = {
-    new: 0,
-    under_repair: 0,
-    pending_review:0,
-    done: 0,
-    cancel: 0,
+    new: 0, under_repair: 0, pending_review: 0, done: 0, cancel: 0,
   };
-  for (const row of rows) {
-    counts[row._id as MaintenanceStatus] = row.count;
-  }
+  for (const row of rows) counts[row._id as MaintenanceStatus] = row.count;
 
   return {
-    open: counts.new,
-    inProgress: counts.under_repair,
-    onHold: counts.cancel,
+    new: counts.new,
+    underRepair: counts.under_repair,
+    pendingReview: counts.pending_review,
     done: counts.done,
-    total: counts.new + counts.under_repair + counts.done + counts.cancel,
+    cancel: counts.cancel,
+    total: counts.new + counts.under_repair + counts.pending_review + counts.done + counts.cancel,
   };
 }
 

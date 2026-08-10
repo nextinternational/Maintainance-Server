@@ -1,7 +1,7 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 export type MaintenanceStatus = "new" | "under_repair" | "done" | "cancel" |"pending_review";
-export const VALID_STATUSES: MaintenanceStatus[] = ["new", "under_repair", "done", "cancel"];
+export const VALID_STATUSES: MaintenanceStatus[] = ["new", "under_repair", "pending_review", "done", "cancel"];
 
 export interface IMaintenanceMedia {
   url: string;
@@ -143,7 +143,7 @@ const maintenanceRequestSchema = new Schema<IMaintenanceRequest>(
     id: { type: Number, unique: true, index: true },
     name: { type: String, required: true },
     equipmentId: { type: Number, required: true, index: true },
-    priority: { type: String, required: true },
+  priority: { type: String, enum: ["high", "medium", "low", "none"], default: "none", required: true },
     description: { type: String, required: true },
     reportedBy: { type: String, required: true },
     reportedByEmail: { type: String, required: true },
