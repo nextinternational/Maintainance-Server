@@ -14,6 +14,8 @@ import partRouter from "./routes/Part.route.js";
 import categoryRouter from "./routes/Category.route.js";
 import purchaseOrderRouter from "./routes/Purchaseorder.route.js";
 import meterRouter from "./routes/Meter.route.js";
+import locationRouter from "./routes/location.routes.js";
+import restaurantRouter from "./routes/restaurant.routes.js";
 
 
 dotenv.config();
@@ -59,7 +61,8 @@ app.use("/api/v1", partRouter);
 app.use("/api/v1", categoryRouter);
 app.use("/api/v1", purchaseOrderRouter);
 app.use("/api/v1", meterRouter);
-
+app.use("/api/v1", locationRouter);
+app.use("/api/v1", restaurantRouter);
 
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
