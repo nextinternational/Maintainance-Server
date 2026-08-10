@@ -34,12 +34,20 @@ export interface MaintenanceRequestDTO {
     id: number;
     name: string;
     location: { id: number; name: string } | string | null;
+    restaurant: string | null;
     assetCode: string | null;
+    reference: string | null;
     serialNo: string | null;
     model: string | null;
-    restaurant: string | null;
+    vendor: string | null;
+    vendorReference: string | null;
+    owner: string | null;
+    cost: number | null;
+    assignedDate: string | null;
+    effectiveDate: string | null;
+    scrapDate: string | null;
+    warrantyExpirationDate: string | null;
   } | null;
-  
   category: { id: number; name: string } | null;
   maintenanceTeam: { id: number; name: string } | null;
   technicians: { id: string; name: string }[];
@@ -113,17 +121,26 @@ function transformRequest(
     state: r.status,
     maintenanceType: "Corrective", // no field backing this yet — every request is corrective for now
     stage: STAGE_MAP[r.status],
-    equipment: eq
-      ? {
-          id: eq.id,
-          name: eq.name,
-          location: eq.usedInLocation ?? null,
-          assetCode: eq.assetCode ?? null,
-          serialNo: eq.serialNumber ?? null, // note: Equipment schema field is serialNumber, not serialNo
-          model: eq.model ?? null,
-           restaurant: eq.restaurant ?? null,
-        }
-      : null,
+   equipment: eq
+  ? {
+      id: eq.id,
+      name: eq.name,
+      location: eq.usedInLocation ?? null,
+      restaurant: eq.restaurant ?? null,
+      assetCode: eq.assetCode ?? null,
+      reference: eq.reference ?? null,
+      serialNo: eq.serialNumber ?? null,
+      model: eq.model ?? null,
+      vendor: eq.vendor ?? null,
+      vendorReference: eq.vendorReference ?? null,
+      owner: eq.owner ?? null,
+      cost: eq.cost ?? null,
+      assignedDate: eq.assignedDate ?? null,
+      effectiveDate: eq.effectiveDate ?? null,
+      scrapDate: eq.scrapDate ?? null,
+      warrantyExpirationDate: eq.warrantyExpirationDate ?? null,
+    }
+  : null,
     category: eq?.category ? { id: 0, name: eq.category } : null,
     maintenanceTeam: eq?.maintenanceTeam ? { id: 0, name: eq.maintenanceTeam } : null,
     technicians: r.technicians ?? [],
