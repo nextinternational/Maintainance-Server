@@ -65,7 +65,7 @@ app.use("/api/v1", meterRouter);
 app.use("/api/v1", locationRouter);
 app.use("/api/v1", restaurantRouter);
 app.use("/api/v1", vendorRouter);
-
+// 
 
 
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {
