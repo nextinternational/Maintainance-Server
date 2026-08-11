@@ -16,6 +16,7 @@ export interface CreatePartInput {
   vendor?: string | null;
   vendorPartNumber?: string | null;
   location?: string | null;
+  restaurant?: string | null;
   barcode?: string | null;
   linkedEquipmentIds?: number[];
 }
@@ -32,6 +33,7 @@ export interface UpdatePartInput {
   vendor?: string | null;
   vendorPartNumber?: string | null;
   location?: string | null;
+  restaurant?: string | null;
   barcode?: string | null;
 }
 
@@ -108,6 +110,7 @@ export async function createPartService(input: CreatePartInput) {
     vendor: input.vendor ?? null,
     vendorPartNumber: input.vendorPartNumber ?? null,
     location: input.location ?? null,
+    restaurant: input.restaurant ?? null,
     barcode: input.barcode ?? null,
     linkedEquipmentIds: input.linkedEquipmentIds ?? [],
   });

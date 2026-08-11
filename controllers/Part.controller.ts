@@ -101,6 +101,7 @@ export const createPart = async (req: Request, res: Response, next: NextFunction
       vendor,
       vendorPartNumber,
       location,
+      restaurant,
       barcode,
       linkedEquipmentIds,
     } = req.body;
@@ -122,6 +123,7 @@ export const createPart = async (req: Request, res: Response, next: NextFunction
       vendor,
       vendorPartNumber,
       location,
+      restaurant,
       barcode,
       linkedEquipmentIds: Array.isArray(linkedEquipmentIds)
         ? linkedEquipmentIds.map(Number)
@@ -156,6 +158,7 @@ export const updatePart = async (req: Request, res: Response, next: NextFunction
       vendor,
       vendorPartNumber,
       location,
+      restaurant,
       barcode,
     } = req.body;
 
@@ -171,6 +174,7 @@ export const updatePart = async (req: Request, res: Response, next: NextFunction
       vendor,
       vendorPartNumber,
       location,
+      restaurant,
       barcode,
     });
 

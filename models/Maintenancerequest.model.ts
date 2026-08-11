@@ -1,4 +1,5 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
+import { IOptionScore, IProcedureField, IProcedureFieldCondition } from "./Procedure.model.js";
 
 export type MaintenanceStatus = "new" | "under_repair" | "done" | "cancel" |"pending_review";
 export const VALID_STATUSES: MaintenanceStatus[] = ["new", "under_repair", "pending_review", "done", "cancel"];
@@ -52,8 +53,27 @@ export interface IMaintenanceRequest extends Document {
   createdAt: Date;
   updatedAt: Date;
    partsUsed: IUsedPart[];
+   procedure: IProcedureInstance | null;
+}
+export interface IProcedureFieldResponse {
+  fieldId: string;
+  value: string | number | boolean | string[] | null;
+  scoreEarned: number | null;
 }
 
+export interface IProcedureInstance {
+  procedureId: number | null;   // null if the source procedure was later deleted
+  title: string;
+  fields: IProcedureField[];    // snapshot of the template's fields at attach time
+  responses: IProcedureFieldResponse[];
+  scoringEnabled: boolean;
+  maxScore: number;
+  totalScore: number | null;
+  completedAt: Date | null;
+  completedBy: string | null;
+  attachedAt: Date;
+  attachedBy: string;
+}
 // ─── Auto-increment counter ────────────────────────────────────────────────
 interface ICounter extends Omit<Document, "_id"> {
   _id: string;
@@ -138,6 +158,53 @@ const usedPartSchema = new Schema<IUsedPart>(
   },
   { _id: false }
 );
+const procConditionSchema = new Schema<IProcedureFieldCondition>(
+  { fieldId: { type: String, required: true }, equals: { type: String, required: true } },
+  { _id: false },
+);
+const procOptionScoreSchema = new Schema<IOptionScore>(
+  { option: { type: String, required: true }, score: { type: Number, required: true, min: 0 } },
+  { _id: false },
+);
+const procFieldSchema = new Schema<IProcedureField>(
+  {
+    id: { type: String, required: true },
+    type: { type: String, required: true },
+    label: { type: String, required: true },
+    required: { type: Boolean, default: false },
+    options: { type: [String], default: [] },
+    order: { type: Number, default: 0 },
+    scoringEnabled: { type: Boolean, default: false },
+    maxScore: { type: Number, default: 0 },
+    optionScores: { type: [procOptionScoreSchema], default: [] },
+    condition: { type: procConditionSchema, default: null },
+  },
+  { _id: false },
+);
+const procResponseSchema = new Schema<IProcedureFieldResponse>(
+  {
+    fieldId: { type: String, required: true },
+    value: { type: Schema.Types.Mixed, default: null },
+    scoreEarned: { type: Number, default: null },
+  },
+  { _id: false },
+);
+const procInstanceSchema = new Schema<IProcedureInstance>(
+  {
+    procedureId: { type: Number, default: null },
+    title: { type: String, required: true },
+    fields: { type: [procFieldSchema], default: [] },
+    responses: { type: [procResponseSchema], default: [] },
+    scoringEnabled: { type: Boolean, default: false },
+    maxScore: { type: Number, default: 0 },
+    totalScore: { type: Number, default: null },
+    completedAt: { type: Date, default: null },
+    completedBy: { type: String, default: null },
+    attachedAt: { type: Date, default: () => new Date() },
+    attachedBy: { type: String, required: true },
+  },
+  { _id: false },
+);
 const maintenanceRequestSchema = new Schema<IMaintenanceRequest>(
   {
     id: { type: Number, unique: true, index: true },
@@ -147,6 +214,7 @@ const maintenanceRequestSchema = new Schema<IMaintenanceRequest>(
     description: { type: String, required: true },
     reportedBy: { type: String, required: true },
     reportedByEmail: { type: String, required: true },
+    
     status: {
       type: String,
       enum: ["new", "under_repair","pending_review", "done", "cancel"],
@@ -167,6 +235,7 @@ const maintenanceRequestSchema = new Schema<IMaintenanceRequest>(
     technicianCompletedBy: { type: String, default: null },
     completionNotes: { type: String, default: null },
     review: { type: reviewSchema, default: () => ({}) },
+    procedure: { type: procInstanceSchema, default: null },
      partsUsed: {
    type: [usedPartSchema],
    default: [],

@@ -17,6 +17,7 @@ import meterRouter from "./routes/Meter.route.js";
 import locationRouter from "./routes/location.routes.js";
 import restaurantRouter from "./routes/restaurant.routes.js";
 import vendorRouter from "./routes/vendor.routes.js";
+import procedureRouter from "./routes/Procedure.route.js";
 
 
 dotenv.config();
@@ -65,7 +66,7 @@ app.use("/api/v1", meterRouter);
 app.use("/api/v1", locationRouter);
 app.use("/api/v1", restaurantRouter);
 app.use("/api/v1", vendorRouter);
-// 
+app.use("/api/v1", procedureRouter);
 
 
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

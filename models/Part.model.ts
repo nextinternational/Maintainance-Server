@@ -40,6 +40,7 @@ export interface IPart {
   vendor: string | null;
   vendorPartNumber: string | null;
   location: string | null;
+  restaurant: string | null;
   barcode: string | null;
   linkedEquipmentIds: number[];
   active: boolean;
@@ -62,6 +63,7 @@ const partSchema = new Schema<IPartDocument>(
     vendor: { type: String, default: null },
     vendorPartNumber: { type: String, default: null },
     location: { type: String, default: null },
+    restaurant: { type: String, default: null },
     barcode: { type: String, default: null },
     linkedEquipmentIds: { type: [Number], default: [], index: true },
     active: { type: Boolean, default: true, index: true },
