@@ -1,32 +1,45 @@
+import EquipmentModel from "../models/equipment.model.js";
 import MaintenanceRequestModel, {
   MaintenanceStatus,
 } from "../models/Maintenancerequest.model.js";
 
-// ─── Shared filter shape ──────────────────────────────────────────────────────
-// Every report accepts the same optional filters so the frontend can reuse one
-// filter bar (date range today, easy to extend with location/team later).
-
 export interface ReportingFilters {
   startDate?: Date;
   endDate?: Date;
+  priority?: string;
+  technicianId?: string;
+  restaurant?: string;
+  dueStart?: Date;
+  dueEnd?: Date;
 }
-
-function buildDateMatch(filters: ReportingFilters): Record<string, any> {
+async function buildFilterMatch(filters: ReportingFilters): Promise<Record<string, any>> {
   const match: Record<string, any> = {};
+
   if (filters.startDate || filters.endDate) {
     match.createdAt = {};
     if (filters.startDate) match.createdAt.$gte = filters.startDate;
     if (filters.endDate) match.createdAt.$lte = filters.endDate;
   }
+
+  if (filters.priority) match.priority = filters.priority;
+  if (filters.technicianId) match["technicians.id"] = filters.technicianId;
+
+  if (filters.dueStart || filters.dueEnd) {
+    match.scheduleDate = {};
+    if (filters.dueStart) match.scheduleDate.$gte = filters.dueStart;
+    if (filters.dueEnd) match.scheduleDate.$lte = filters.dueEnd;
+  }
+
+  if (filters.restaurant) {
+    const equipmentIds = (
+      await EquipmentModel.find({ restaurant: filters.restaurant }, { id: 1 }).lean()
+    ).map((e) => e.id);
+    // equipmentId already lives on MaintenanceRequestModel, so no extra $lookup needed
+    match.equipmentId = { $in: equipmentIds.length ? equipmentIds : [-1] };
+  }
+
   return match;
 }
-
-// ─── Created vs Completed ─────────────────────────────────────────────────────
-// "Created" = requests whose createdAt falls in range.
-// "Completed" = requests whose status is "done", bucketed by closeDate.
-// Two separate date axes merged into one series so the frontend line chart
-// gets a clean [{ date, created, completed }] array.
-
 export interface CreatedVsCompletedPoint {
   date: string;
   created: number;
@@ -43,7 +56,7 @@ export interface CreatedVsCompletedReport {
 export async function getCreatedVsCompleted(
   filters: ReportingFilters = {},
 ): Promise<CreatedVsCompletedReport> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const [createdSeries, completedSeries, totals] = await Promise.all([
     MaintenanceRequestModel.aggregate([
@@ -117,7 +130,7 @@ export interface ReactiveVsRepeatableReport {
 export async function getReactiveVsRepeatable(
   filters: ReportingFilters = {},
 ): Promise<ReactiveVsRepeatableReport> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -152,7 +165,7 @@ export interface StatusBreakdownReport {
 export async function getStatusBreakdown(
   filters: ReportingFilters = {},
 ): Promise<StatusBreakdownReport> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -184,7 +197,7 @@ export interface PriorityBreakdownRow {
 export async function getPriorityBreakdown(
   filters: ReportingFilters = {},
 ): Promise<PriorityBreakdownRow[]> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -216,7 +229,7 @@ export interface AverageResolutionTimeReport {
 export async function getAverageResolutionTime(
   filters: ReportingFilters = {},
 ): Promise<AverageResolutionTimeReport> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const resolvedMatch = { ...match, status: "done", closeDate: { $ne: null } };
 
@@ -276,7 +289,7 @@ export interface TechnicianWorkloadRow {
 export async function getTechnicianWorkload(
   filters: ReportingFilters = {},
 ): Promise<TechnicianWorkloadRow[]> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -319,7 +332,7 @@ export async function getEquipmentReliability(
   filters: ReportingFilters = {},
   limit = 10,
 ): Promise<EquipmentReliabilityRow[]> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -407,7 +420,7 @@ export interface LocationBreakdownRow {
 export async function getLocationBreakdown(
   filters: ReportingFilters = {},
 ): Promise<LocationBreakdownRow[]> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -442,7 +455,7 @@ export interface CategoryBreakdownRow {
 export async function getCategoryBreakdown(
   filters: ReportingFilters = {},
 ): Promise<CategoryBreakdownRow[]> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },
@@ -606,7 +619,7 @@ export interface RequestDetailRow {
 export async function getRequestsDetail(
   filters: ReportingFilters = {},
 ): Promise<RequestDetailRow[]> {
-  const match = buildDateMatch(filters);
+  const match = await buildFilterMatch(filters);
 
   const rows = await MaintenanceRequestModel.aggregate([
     { $match: match },

@@ -23,17 +23,17 @@ import {
 // ?startDate=2026-06-01&endDate=2026-07-30 (both optional, ISO date strings)
 
 function parseFilters(req: Request): ReportingFilters {
-  const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+  const { startDate, endDate, priority, technicianId, restaurant, dueStart, dueEnd } =
+    req.query as Record<string, string | undefined>;
 
   const parsed: ReportingFilters = {};
-  if (startDate) {
-    const d = new Date(startDate);
-    if (!isNaN(d.getTime())) parsed.startDate = d;
-  }
-  if (endDate) {
-    const d = new Date(endDate);
-    if (!isNaN(d.getTime())) parsed.endDate = d;
-  }
+  if (startDate) { const d = new Date(startDate); if (!isNaN(d.getTime())) parsed.startDate = d; }
+  if (endDate)   { const d = new Date(endDate);   if (!isNaN(d.getTime())) parsed.endDate = d; }
+  if (priority) parsed.priority = priority;
+  if (technicianId) parsed.technicianId = technicianId;
+  if (restaurant) parsed.restaurant = restaurant;
+  if (dueStart) { const d = new Date(dueStart); if (!isNaN(d.getTime())) parsed.dueStart = d; }
+  if (dueEnd)   { const d = new Date(dueEnd);   if (!isNaN(d.getTime())) parsed.dueEnd = d; }
   return parsed;
 }
 
