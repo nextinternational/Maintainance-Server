@@ -10,7 +10,16 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 // ─── Types ────────────────────────────────────────────────────────────────────
+const VALID_PRIORITIES = ["high", "medium", "low", "none"] as const;
 
+function normalizePriority(input: string): string {
+  const mapped = PRIORITY_MAP[input] ?? input;
+  const lower = mapped?.toLowerCase();
+  if (!VALID_PRIORITIES.includes(lower as any)) {
+    throw new Error(`Invalid priority "${input}" — must be one of ${VALID_PRIORITIES.join(", ")}`);
+  }
+  return lower;
+}
 export interface CreateRequestInput {
   equipmentId: number;
   priority: string;
@@ -255,7 +264,7 @@ export async function createMaintenanceRequest(input: CreateRequestInput) {
   const request = await MaintenanceRequestModel.create({
     name: requestName,
     equipmentId: eq.id,
-    priority: PRIORITY_MAP[priority] ?? priority,
+    priority: normalizePriority(priority),
     description,
     reportedBy,
     reportedByEmail,

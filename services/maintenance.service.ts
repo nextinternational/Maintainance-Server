@@ -109,7 +109,16 @@ function computeDuration(scheduleDate: Date | null, closeDate: Date | null): num
   const hours = (closeDate.getTime() - scheduleDate.getTime()) / (1000 * 60 * 60);
   return hours > 0 ? Math.round(hours * 10) / 10 : 0;
 }
+const VALID_PRIORITIES = ["high", "medium", "low", "none"] as const;
 
+function normalizePriority(input: string): string {
+  const mapped = PRIORITY_MAP[input] ?? input;
+  const lower = mapped?.toLowerCase();
+  if (!VALID_PRIORITIES.includes(lower as any)) {
+    throw new Error(`Invalid priority "${input}" — must be one of ${VALID_PRIORITIES.join(", ")}`);
+  }
+  return lower;
+}
 function transformRequest(
   r: IMaintenanceRequest,
   equipmentMap: Map<number, any>,
@@ -120,7 +129,7 @@ function transformRequest(
     id: r.id,
     name: r.name,
     description: r.description ?? null,
-    priority: r.priority,
+    priority: normalizePriority(r.priority),
     state: r.status,
     maintenanceType: "Corrective", // no field backing this yet — every request is corrective for now
     stage: STAGE_MAP[r.status],
