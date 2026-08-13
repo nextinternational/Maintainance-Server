@@ -4,6 +4,7 @@ import EquipmentModel from "../models/equipment.model.js";
 import MaintenanceRequestModel from "../models/Maintenancerequest.model.js";
 import sendMail from "../utils/sendMail.js";
 import MeterReadingModel, { ReadingSource } from "../models/Meterreading.model.js";
+import { PRIORITY_MAP } from "../@types/equipment.constants.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -194,7 +195,16 @@ function triggerFires(trigger: IMeterTrigger, value: number, previousValue: numb
       return false;
   }
 }
+const VALID_PRIORITIES = ["high", "medium", "low", "none"] as const;
 
+function normalizePriority(input: string): string {
+  const mapped = PRIORITY_MAP[input] ?? input;
+  const lower = mapped?.toLowerCase();
+  if (!VALID_PRIORITIES.includes(lower as any)) {
+    throw new Error(`Invalid priority "${input}" — must be one of ${VALID_PRIORITIES.join(", ")}`);
+  }
+  return lower;
+}
 async function createWorkOrderFromTrigger(
   meter: { id: number; name: string; equipmentId: number; equipmentName: string | null; unit: string },
   trigger: IMeterTrigger,
@@ -210,7 +220,7 @@ async function createWorkOrderFromTrigger(
   const request = await MaintenanceRequestModel.create({
     name: requestName,
     equipmentId: meter.equipmentId,
-    priority: trigger.workOrderPriority,
+    priority: normalizePriority(trigger.workOrderPriority),
     description,
     reportedBy: "Meter Automation",
     reportedByEmail: process.env.MAINTENANCE_EMAIL as string,
