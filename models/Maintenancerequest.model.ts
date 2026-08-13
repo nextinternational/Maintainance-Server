@@ -52,8 +52,11 @@ export interface IMaintenanceRequest extends Document {
   review: IPerformanceReview;           
   createdAt: Date;
   updatedAt: Date;
-   partsUsed: IUsedPart[];
-   procedure: IProcedureInstance | null;
+     partsUsed: IUsedPart[];
+  /** @deprecated Legacy records only; new writes use `procedures`. */
+  procedure: IProcedureInstance | null;
+  procedures: IProcedureInstance[];
+
 }
 export interface IProcedureFieldResponse {
   fieldId: string;
@@ -62,7 +65,9 @@ export interface IProcedureFieldResponse {
 }
 
 export interface IProcedureInstance {
+  instanceId: string;
   procedureId: number | null;   // null if the source procedure was later deleted
+
   title: string;
   fields: IProcedureField[];    // snapshot of the template's fields at attach time
   responses: IProcedureFieldResponse[];
@@ -191,7 +196,9 @@ const procResponseSchema = new Schema<IProcedureFieldResponse>(
 );
 const procInstanceSchema = new Schema<IProcedureInstance>(
   {
+    instanceId: { type: String, required: true },
     procedureId: { type: Number, default: null },
+
     title: { type: String, required: true },
     fields: { type: [procFieldSchema], default: [] },
     responses: { type: [procResponseSchema], default: [] },
@@ -234,9 +241,12 @@ const maintenanceRequestSchema = new Schema<IMaintenanceRequest>(
       technicianCompletedAt: { type: Date, default: null },
     technicianCompletedBy: { type: String, default: null },
     completionNotes: { type: String, default: null },
-    review: { type: reviewSchema, default: () => ({}) },
+        review: { type: reviewSchema, default: () => ({}) },
+    // Legacy singular field retained so old documents remain readable.
     procedure: { type: procInstanceSchema, default: null },
+    procedures: { type: [procInstanceSchema], default: [] },
      partsUsed: {
+
    type: [usedPartSchema],
    default: [],
  },

@@ -1,8 +1,10 @@
 import EquipmentModel from "../models/equipment.model.js";
 import MaintenanceRequestModel, {
   
-  IMaintenanceRequest,
+    IMaintenanceRequest,
   MaintenanceStatus,
+  IProcedureInstance,
+
 } from "../models/Maintenancerequest.model.js";
 import MaintenanceMessageModel from "../models/MaintenanceMessage.model.js";
 import sendMail from "../utils/sendMail.js";
@@ -76,6 +78,7 @@ export interface MaintenanceRequestDTO {
     partName: string | null;
     quantity: number;
   }[];
+  procedures: IProcedureInstance[];
 }
 
 export interface MaintenanceMessageDTO {
@@ -164,12 +167,18 @@ review: {
   ratedAt: r.review?.ratedAt ? new Date(r.review.ratedAt).toISOString() : null,
   ratedBy: r.review?.ratedBy ?? null,
 },
-    partsUsed: ((r as any).partsUsed ?? []).map((p: any) => ({
+        partsUsed: ((r as any).partsUsed ?? []).map((p: any) => ({
       partId: p.partId,
       partName: p.partName ?? null,
       quantity: p.quantity,
     })),
+    procedures: ((r as any).procedures?.length ? (r as any).procedures : (r as any).procedure ? [(r as any).procedure] : []).map((p: any) => ({
+      ...p,
+      attachedAt: p.attachedAt ? new Date(p.attachedAt).toISOString() : new Date().toISOString(),
+      completedAt: p.completedAt ? new Date(p.completedAt).toISOString() : null,
+    })),
   };
+
 }
 
 async function buildEquipmentMap(equipmentIds: number[]) {

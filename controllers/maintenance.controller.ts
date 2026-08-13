@@ -17,6 +17,7 @@ import {
   submitTechnicianCompletionService,
 } from "../services/maintenance.service.js";
 import { MaintenanceStatus, VALID_STATUSES } from "../models/Maintenancerequest.model.js";
+import { attachProcedureToRequestService } from "../services/Procedure.service.js";
 
 
 // ─── Get all maintenance requests ─────────────────────────────────────────────
@@ -248,6 +249,12 @@ export const createMaintenanceRequestManual = async (
 ) => {
   try {
     const { equipmentId, priority, description, reportedBy, reportedByEmail } = req.body;
+    let procedureIds: number[] = [];
+    if (req.body.procedureIds) {
+      const rawProcedureIds = typeof req.body.procedureIds === "string" ? JSON.parse(req.body.procedureIds) : req.body.procedureIds;
+      if (!Array.isArray(rawProcedureIds)) throw new Error("procedureIds must be an array");
+      procedureIds = [...new Set(rawProcedureIds.map(Number).filter((id: number) => Number.isInteger(id) && id > 0))];
+    }
 
     if (!equipmentId || !priority || !description) {
       return res.status(400).json({
@@ -280,14 +287,22 @@ export const createMaintenanceRequestManual = async (
       jsonMedia,
     });
 
-    if (!data) {
+        if (!data) {
       return res.status(404).json({ success: false, message: "Equipment not found" });
     }
 
+    const actor = req.user as any;
+    for (const procedureId of procedureIds) {
+      await attachProcedureToRequestService(procedureId, data.id, { name: actor?.name ?? "Manager" });
+    }
+    const finalData = procedureIds.length ? await getMaintenanceRequestById(data.id) : data;
+
     res.status(201).json({
+
       success: true,
       message: "Work order created successfully",
-      data,
+            data: finalData,
+
     });
   } catch (error: any) {
     next(new ErrorHandler(error.message ?? "Something went wrong", 400));

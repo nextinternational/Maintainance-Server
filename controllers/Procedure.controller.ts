@@ -16,8 +16,11 @@ import {
   bulkAttachProcedureService,
   submitProcedureResponsesService,
   completeProcedureService,
-  fetchProcedureInstanceService,
+    fetchProcedureInstanceService,
+  fetchProcedureInstancesService,
+
 } from "../services/Procedure.service.js";
+import type { ProcedureResponseInput } from "../services/Procedure.service.js";
 
 // ─── Get all procedures ─────────────────────────────────────────────────────
 // ?status=published&tag=safety&search=forklift
@@ -281,13 +284,27 @@ export const bulkAttachProcedure = async (req: Request, res: Response, next: Nex
 
 // ─── Fill out / complete ──────────────────────────────────────────────────────
 
+export const getProcedureInstances = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requestId = parseInt(req.params.requestId as string);
+    if (isNaN(requestId)) return res.status(400).json({ success: false, message: "Invalid requestId" });
+    const instances = await fetchProcedureInstancesService(requestId);
+    res.status(200).json({ success: true, data: instances });
+  } catch (error: any) {
+    return next(new ErrorHandler(error.message || "Something went wrong", 400));
+  }
+};
+
 export const getProcedureInstance = async (req: Request, res: Response, next: NextFunction) => {
+
   try {
     const requestId = parseInt(req.params.requestId as string);
     if (isNaN(requestId)) return res.status(400).json({ success: false, message: "Invalid requestId" });
 
-    const instance = await fetchProcedureInstanceService(requestId);
+        const instanceId = req.params.instanceId as string | undefined;
+    const instance = await fetchProcedureInstanceService(requestId, instanceId);
     res.status(200).json({ success: true, data: instance });
+
   } catch (error: any) {
     return next(new ErrorHandler(error.message || "Something went wrong", 400));
   }
@@ -300,15 +317,19 @@ export const submitProcedureResponses = async (req: Request, res: Response, next
     const requestId = parseInt(req.params.requestId as string);
     if (isNaN(requestId)) return res.status(400).json({ success: false, message: "Invalid requestId" });
 
-    const { responses } = req.body as { responses: { fieldId: string; value: any }[] };
+        const { responses } = req.body as { responses: ProcedureResponseInput[] };
     if (!Array.isArray(responses) || !responses.length) {
       return res.status(400).json({ success: false, message: "responses must be a non-empty array" });
     }
 
-    const updated = await submitProcedureResponsesService(requestId, responses);
+    const instanceId = req.params.instanceId as string | undefined;
+    const updated = await submitProcedureResponsesService(requestId, responses, instanceId);
     if (!updated) return res.status(404).json({ success: false, message: "Work order not found" });
+    const instances = await fetchProcedureInstancesService(requestId);
+    const instance = instanceId ? instances.find((item) => item.instanceId === instanceId) : instances[0];
 
-    res.status(200).json({ success: true, message: "Responses saved", data: updated.procedure });
+    res.status(200).json({ success: true, message: "Responses saved", data: instance ?? null });
+
   } catch (error: any) {
     return next(new ErrorHandler(error.message || "Something went wrong", 400));
   }
@@ -319,11 +340,15 @@ export const completeProcedure = async (req: Request, res: Response, next: NextF
     const requestId = parseInt(req.params.requestId as string);
     if (isNaN(requestId)) return res.status(400).json({ success: false, message: "Invalid requestId" });
 
-    const actor = req.user as any;
-    const updated = await completeProcedureService(requestId, { name: actor?.name ?? "Unknown" });
+        const actor = req.user as any;
+    const instanceId = req.params.instanceId as string | undefined;
+    const updated = await completeProcedureService(requestId, { name: actor?.name ?? "Unknown" }, instanceId);
     if (!updated) return res.status(404).json({ success: false, message: "Work order not found" });
+    const instances = await fetchProcedureInstancesService(requestId);
+    const instance = instanceId ? instances.find((item) => item.instanceId === instanceId) : instances[0];
 
-    res.status(200).json({ success: true, message: "Procedure completed", data: updated.procedure });
+    res.status(200).json({ success: true, message: "Procedure completed", data: instance ?? null });
+
   } catch (error: any) {
     return next(new ErrorHandler(error.message || "Something went wrong", 400));
   }

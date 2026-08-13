@@ -16,7 +16,9 @@ import {
   bulkAttachProcedure,
   submitProcedureResponses,
   completeProcedure,
-  getProcedureInstance,
+    getProcedureInstance,
+  getProcedureInstances,
+
 } from "../controllers/Procedure.controller.js";
 
 const procedureRouter = Router();
@@ -68,9 +70,19 @@ procedureRouter.post(
 );
 
 // ─── Fill out a procedure — technicians are the ones executing the work ─────
+procedureRouter.get("/request/:requestId/instances", isAuthenticated, getProcedureInstances);
 procedureRouter.get("/request/:requestId/instance", isAuthenticated, getProcedureInstance);
+procedureRouter.get("/request/:requestId/instance/:instanceId", isAuthenticated, getProcedureInstance);
+
 procedureRouter.patch(
   "/request/:requestId/responses",
+
+  isAuthenticated,
+  authorizeRoles("manager", "Enduser", "technician"),
+  submitProcedureResponses,
+);
+procedureRouter.patch(
+  "/request/:requestId/instance/:instanceId/responses",
   isAuthenticated,
   authorizeRoles("manager", "Enduser", "technician"),
   submitProcedureResponses,
@@ -81,5 +93,12 @@ procedureRouter.patch(
   authorizeRoles("manager", "Enduser", "technician"),
   completeProcedure,
 );
+procedureRouter.patch(
+  "/request/:requestId/instance/:instanceId/complete",
+  isAuthenticated,
+  authorizeRoles("manager", "Enduser", "technician"),
+  completeProcedure,
+);
+
 
 export default procedureRouter;
