@@ -326,6 +326,7 @@ export async function attachProcedureToRequestService(procedureId: number, reque
   const procedure = await ProcedureModel.findOne({ id: procedureId, active: true }).lean();
   if (!procedure) throw new Error("Procedure not found");
   if (procedure.status !== "published") throw new Error("Only published procedures can be attached to a work order");
+
   const request = await MaintenanceRequestModel.findOne({ id: requestId });
   if (!request) return null;
   const instances = getRequestInstances(request);
