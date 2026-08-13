@@ -383,7 +383,7 @@ export async function createManagerMaintenanceRequest(input: CreateManagerReques
   const request = await MaintenanceRequestModel.create({
     name: requestName,
     equipmentId: eq.id,
-    priority: PRIORITY_MAP[priority] ?? priority,
+   priority: normalizePriority(priority),
     description,
     reportedBy,
     reportedByEmail,
