@@ -38,7 +38,8 @@ app.use(
   cors({
     origin:[
        "http://localhost:8000",
-      "https://maintenance-dashboard-lime.vercel.app"
+      "https://maintenance-dashboard-lime.vercel.app",
+      "https://maintenance-dashboard-phi.vercel.app"
       ],
     credentials: true,
   })
